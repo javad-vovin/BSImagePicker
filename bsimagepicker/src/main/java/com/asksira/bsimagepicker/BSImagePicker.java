@@ -82,6 +82,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     //Callbacks
     public interface OnSingleImageSelectedListener {
         void onSingleImageSelected(Uri uri, String tag);
+
+        void onRemove();
     }
     private OnSingleImageSelectedListener onSingleImageSelectedListener;
     public interface OnMultiImageSelectedListener {
@@ -107,6 +109,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private String providerAuthority;
     private boolean showCameraTile = true;
     private boolean showGalleryTile = true;
+    private boolean showRemoveTile = false;
     private int spanCount = 3;
     private int gridSpacing = Utils.dp2px(2);
     private int multiSelectBarBgColor = android.R.color.white;
@@ -344,7 +347,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             adapter.setImageList(uriList);
             //We are not closing the cursor here because Android Doc says Loader will manage them.
 
-            if (uriList.size() < 1 && !showCameraTile && !showGalleryTile) {
+            if (uriList.size() < 1 && !showCameraTile && !showGalleryTile && !showRemoveTile) {
                 tvEmptyView.setVisibility(View.VISIBLE);
                 if (bottomBarView != null) {
                     bottomBarView.setVisibility(View.GONE);
@@ -375,9 +378,11 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             if (isMultiSelection) {
                 showCameraTile = false;
                 showGalleryTile = false;
+                showRemoveTile = false;
             } else {
                 showCameraTile = getArguments().getBoolean("showCameraTile");
                 showGalleryTile = getArguments().getBoolean("showGalleryTile");
+                showRemoveTile = getArguments().getBoolean("showRemoveTile");
             }
             spanCount = getArguments().getInt("spanCount");
             peekHeight = getArguments().getInt("peekHeight");
@@ -409,7 +414,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
                     imageLoaderDelegate,
                     isMultiSelection,
                     showCameraTile,
-                    showGalleryTile);
+                    showGalleryTile,
+                    showRemoveTile);
             adapter.setMaximumSelectionCount(maximumMultiSelectCount);
             adapter.setCameraTileOnClickListener(new View.OnClickListener() {
                 @Override
@@ -441,6 +447,13 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
                         onSingleImageSelectedListener.onSingleImageSelected((Uri) v.getTag(), tag);
                         if (dismissOnSelect) dismiss();
                     }
+                }
+            });
+            adapter.setRemoveTileOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onSingleImageSelectedListener.onRemove();
+                    if (dismissOnSelect) dismiss();
                 }
             });
             if (isMultiSelection) {
@@ -584,6 +597,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         private int maximumMultiSelectCount = Integer.MAX_VALUE;
         private boolean showCameraTile = true;
         private boolean showGalleryTile = true;
+        private boolean showRemoveTile = false;
         private int peekHeight = Utils.dp2px(360);
         private int spanCount = 3;
         private int gridSpacing = Utils.dp2px(2);
@@ -680,6 +694,11 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             return this;
         }
 
+        public Builder showRemoveTile() {
+            this.showRemoveTile = true;
+            return this;
+        }
+
         public Builder disableOverSelectionMessage() {
             this.showOverSelectMessage = false;
             return this;
@@ -704,6 +723,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             args.putInt("maximumMultiSelectCount", maximumMultiSelectCount);
             args.putBoolean("showCameraTile", showCameraTile);
             args.putBoolean("showGalleryTile", showGalleryTile);
+            args.putBoolean("showRemoveTile", showRemoveTile);
             args.putInt("peekHeight", peekHeight);
             args.putInt("spanCount", spanCount);
             args.putInt("gridSpacing", gridSpacing);

@@ -56,6 +56,11 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
     }
 
     @Override
+    public void onRemove() {
+        ivImage2.setImageDrawable(null);
+    }
+
+    @Override
     public void onMultiImageSelected(List<Uri> uriList, String tag) {
         for (int i=0; i < uriList.size(); i++) {
             if (i >= 6) return;

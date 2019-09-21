@@ -23,6 +23,7 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
     private static final int VIEWTYPE_IMAGE = 103;
     private static final int VIEWTYPE_DUMMY = 104;
     private static final int VIEWTYPE_BOTTOM_SPACE = 105;
+    private static final int VIEWTYPE_REMOVE = 106;
 
     protected Context context;
     protected List<File> imageList;
@@ -32,10 +33,12 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
     protected int nonListItemCount;
     private boolean showCameraTile;
     private boolean showGalleryTile;
+    private boolean showRemoveTile;
 
     private View.OnClickListener cameraTileOnClickListener;
     private View.OnClickListener galleryTileOnClickListener;
     private View.OnClickListener imageTileOnClickListener;
+    private View.OnClickListener removeTileOnClickListener;
 
     public interface OnSelectedCountChangeListener {
         void onSelectedCountChange(int currentCount);
@@ -55,24 +58,20 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
             BSImagePicker.ImageLoaderDelegate imageLoaderDelegate,
             boolean isMultiSelect,
             boolean showCameraTile,
-            boolean showGalleryTile) {
+            boolean showGalleryTile,
+            boolean showRemoveTile) {
         super();
         this.context = context;
         this.isMultiSelect = isMultiSelect;
         selectedFiles = new ArrayList<>();
         this.showCameraTile = showCameraTile;
         this.showGalleryTile = showGalleryTile;
+        this.showRemoveTile = showRemoveTile;
         this.imageLoaderDelegate = imageLoaderDelegate;
         if (isMultiSelect) {
             nonListItemCount = 0;
         } else {
-            if (showCameraTile && showGalleryTile) {
-                nonListItemCount = 2;
-            } else if (showCameraTile || showGalleryTile) {
-                nonListItemCount = 1;
-            } else {
-                nonListItemCount = 0;
-            }
+            nonListItemCount = getNonListItemCount(showCameraTile, showGalleryTile, showRemoveTile);
         }
     }
 
@@ -83,6 +82,8 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
                 return new CameraTileViewHolder(LayoutInflater.from(context).inflate(R.layout.item_picker_camera_tile, parent, false));
             case VIEWTYPE_GALLERY:
                 return new GalleryTileViewHolder(LayoutInflater.from(context).inflate(R.layout.item_picker_gallery_tile, parent, false));
+            case VIEWTYPE_REMOVE:
+                return new RemoveTileViewHolder(LayoutInflater.from(context).inflate(R.layout.item_picker_remove_tile, parent, false));
             case VIEWTYPE_DUMMY:
                 return new DummyViewHolder(LayoutInflater.from(context).inflate(R.layout.item_picker_dummy_tile, parent, false));
             case VIEWTYPE_BOTTOM_SPACE:
@@ -118,11 +119,25 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
                         return VIEWTYPE_CAMERA;
                     } else if (showGalleryTile) {
                         return VIEWTYPE_GALLERY;
+                    } else if (showRemoveTile) {
+                        return VIEWTYPE_REMOVE;
                     } else {
                         return imageList == null ? VIEWTYPE_DUMMY : VIEWTYPE_IMAGE;
                     }
                 case 1:
-                    return (showCameraTile && showGalleryTile) ? VIEWTYPE_GALLERY : (imageList == null ? VIEWTYPE_DUMMY : VIEWTYPE_IMAGE);
+                    if (showGalleryTile) {
+                        return VIEWTYPE_GALLERY;
+                    } else if (showRemoveTile) {
+                        return VIEWTYPE_REMOVE;
+                    } else {
+                        return imageList == null ? VIEWTYPE_DUMMY : VIEWTYPE_IMAGE;
+                    }
+                case 2:
+                    if (showRemoveTile) {
+                        return VIEWTYPE_REMOVE;
+                    } else {
+                        return imageList == null ? VIEWTYPE_DUMMY : VIEWTYPE_IMAGE;
+                    }
                 default:
                     return imageList == null ? VIEWTYPE_DUMMY : VIEWTYPE_IMAGE;
             }
@@ -130,6 +145,14 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
             if (position == getItemCount() - 1) return VIEWTYPE_BOTTOM_SPACE;
             return imageList == null ? VIEWTYPE_DUMMY : VIEWTYPE_IMAGE;
         }
+    }
+
+    private int getNonListItemCount(boolean... vars) {
+        int count = 0;
+        for (boolean var : vars) {
+            count += (var ? 1 : 0);
+        }
+        return count;
     }
 
     public void setSelectedFiles(List<File> selectedFiles) {
@@ -176,6 +199,10 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
         this.onOverSelectListener = onOverSelectListener;
     }
 
+    public void setRemoveTileOnClickListener(View.OnClickListener removeTileOnClickListener) {
+        this.removeTileOnClickListener = removeTileOnClickListener;
+    }
+
     public abstract static class BaseViewHolder extends RecyclerView.ViewHolder {
 
         public BaseViewHolder(View itemView) {
@@ -204,6 +231,19 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
         public GalleryTileViewHolder(View itemView) {
             super(itemView);
             itemView.setOnClickListener(galleryTileOnClickListener);
+        }
+
+        @Override
+        public void bind(int position) {
+
+        }
+    }
+
+    public class RemoveTileViewHolder extends BaseViewHolder {
+
+        public RemoveTileViewHolder(View itemView) {
+            super(itemView);
+            itemView.setOnClickListener(removeTileOnClickListener);
         }
 
         @Override
